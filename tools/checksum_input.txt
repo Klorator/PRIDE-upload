@@ -1,0 +1,11 @@
+# checksum_input.txt
+# Paste the names of the files to submit below, one per line, then run
+# run_checksums.bat. The result is written to checksum.txt in this folder.
+#
+# - Blank lines and lines starting with # are ignored.
+# - You can paste whole blocks from the _filelists\*.txt files. A folder path
+#   line applies to the file names below it, until the next folder path line.
+# - File names without a folder line (or not found in that folder) are looked up
+#   anywhere in the project folder. If a name exists in more than one place, add
+#   its folder path above it.
+
