@@ -26,6 +26,8 @@ $extensionMap = [ordered]@{
     'mzxml'  = 'PEAK_files'
     'mgf'    = 'PEAK_files'
     'fasta'  = 'FASTA_files'
+    'speclib' = 'SPECTRUM_LIBRARY_files'   # DIA-NN / other spectral libraries
+    'quant'  = 'SEARCH_files'     # e.g. name.mzML.quant (SEARCH in Partial submissions)
     'mzid'   = 'RESULT_files'     # mzIdentML (Complete submissions)
     'mztab'  = 'RESULT_files'     # mzTab (Complete submissions)
     'sdrf'   = 'SDRF_files'
@@ -43,6 +45,27 @@ $nameMap = [ordered]@{
     'parameters.txt'      = 'MaxQuant_design_files'
     'summary.txt'         = 'MaxQuant_design_files'
     'mqpar.txt'           = 'MaxQuant_design_files'
+    # DIA-NN output (both "pg.matrix" and "pg_matrix" spellings, depending on version)
+    # (.quant files are the SEARCH files, see extensionMap)
+    'report.tsv'          = 'DIANN_QUANT_files'      # main report -> QUANT
+    'report.parquet'      = 'DIANN_QUANT_files'
+    'report.pg.matrix.tsv'  = 'DIANN_QUANT_files'    # matrices -> QUANT
+    'report.pg_matrix.tsv'  = 'DIANN_QUANT_files'
+    'report.pr.matrix.tsv'  = 'DIANN_QUANT_files'
+    'report.pr_matrix.tsv'  = 'DIANN_QUANT_files'
+    'report.gg.matrix.tsv'  = 'DIANN_QUANT_files'
+    'report.gg_matrix.tsv'  = 'DIANN_QUANT_files'
+    'report.unique_genes_matrix.tsv' = 'DIANN_QUANT_files'
+    'report.stats.tsv'    = 'DIANN_other_files'      # -> OTHER
+    'report.log.txt'      = 'DIANN_other_files'
+    'report-lib.parquet'  = 'SPECTRUM_LIBRARY_files'
+    'sdrf.tsv'            = 'SDRF_files'
+    'sdrf.txt'            = 'SDRF_files'
+}
+# Matched by file name suffix (name.sdrf.tsv / name.sdrf.txt, if already exported)
+$suffixMap = [ordered]@{
+    '.sdrf.tsv' = 'SDRF_files'
+    '.sdrf.txt' = 'SDRF_files'
 }
 # Bruker .d acquisitions are folders, not files; handled separately below.
 
@@ -74,7 +97,12 @@ Get-ChildItem -Recurse -Force -ErrorAction SilentlyContinue | ForEach-Object {
         $ext = $_.Extension.ToLower().TrimStart('.')
         $name = $_.Name.ToLower()
         if ($nameMap.Contains($name))          { $cat = $nameMap[$name] }
-        elseif ($extensionMap.Contains($ext)) { $cat = $extensionMap[$ext] }
+        else {
+            foreach ($suffix in $suffixMap.Keys) {
+                if ($name.EndsWith($suffix)) { $cat = $suffixMap[$suffix]; break }
+            }
+            if (-not $cat -and $extensionMap.Contains($ext)) { $cat = $extensionMap[$ext] }
+        }
         $dir = $_.DirectoryName
     }
     if ($cat) {

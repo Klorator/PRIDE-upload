@@ -11,7 +11,7 @@ format:
 
 Instructions and templates for preparing a submission to [PRIDE](https://www.ebi.ac.uk/pride/markdownpage/submitdatapage) / ProteomeXchange.
 
-See https://www.ebi.ac.uk/pride/markdownpage/submitdatapage for the PRIDE submission website, and [Submission_Tutorial.pdf](Submission_Tutorial.pdf) for the downloaded tutorial (v2.3.4) this template is based on.
+See https://www.ebi.ac.uk/pride/markdownpage/submitdatapage for the PRIDE submission website, and [Submission_Tutorial.pdf](docs/Submission_Tutorial.pdf) for the downloaded tutorial (v2.3.4) this template is based on.
 
 ## Workflow
 
@@ -30,7 +30,7 @@ See https://www.ebi.ac.uk/pride/markdownpage/submitdatapage for the PRIDE submis
 
         Pass one `--template` (`-t`) per template used in the `comment[sdrf template]` columns of the SDRF: the file is then validated against the union of all of them. Without `--template` only the default (`ms-proteomics`) is checked, so the human-specific columns would not be validated. For DIA data add `--template dia-acquisition`. `parse_sdrf list-templates` shows the available templates. Install `sdrf-pipelines[ontology]` to also validate ontology terms (or add `--skip-ontology` to skip that check). Fix any reported errors in the Excel sheet and re-export.
 
-    Use [lesSDRF](https://lessdrf.streamlit.app/) (CompOmics) only as a lookup tool for the correct formatting of column values; do not build the file there. See [lesSDRF_manual.pdf](lesSDRF_manual.pdf) for the app's documentation, and the [SDRF specification](https://sdrf.quantms.org/index.html) for the online reference on column names and allowed values.
+    Use [lesSDRF](https://lessdrf.streamlit.app/) (CompOmics) only as a lookup tool for the correct formatting of column values; do not build the file there. See [lesSDRF_manual.pdf](docs/lesSDRF_manual.pdf) for the app's documentation, and the [SDRF specification](https://sdrf.quantms.org/index.html) for the online reference on column names and allowed values.
 4. **Submit via the PX Submission Tool** ([px-submission-tool-2.11.5/](px-submission-tool-2.11.5/)): use the `Dataset_Details`, `Files`, `File_Relationships`, and `Result_Metadata` sheets to populate the tool's fields, upload the listed files, and attach the generated SDRF file, to create the PRIDE/ProteomeXchange submission.
 
 ## Template structure (`PRIDE_submission_template.xlsx`)
@@ -57,11 +57,23 @@ See https://www.ebi.ac.uk/pride/markdownpage/submitdatapage for the PRIDE submis
 
 (For Complete submissions the RESULT file must be mzTab or mzIdentML; `Result file format` is then set accordingly.)
 
+**Partial submission with DIA-NN** — file type mapping:
+
+| File | File type (dropdown) | File list |
+|---|---|---|
+| `*.mzML.quant` (satisfies the Partial-submission SEARCH requirement) | SEARCH | `SEARCH_files.txt` |
+| `report.tsv` / `report.parquet` (main report), `report.pg_matrix.tsv`, `report.pr_matrix.tsv`, `report.gg_matrix.tsv`, `report.unique_genes_matrix.tsv` | QUANT | `DIANN_QUANT_files.txt` |
+| `report.stats.tsv`, `report.log.txt` | OTHER | `DIANN_other_files.txt` |
+| `*.speclib`, `report-lib.parquet` (spectral library) | SPECTRUM_LIBRARY | `SPECTRUM_LIBRARY_files.txt` |
+| FASTA database | FASTA | `FASTA_files.txt` |
+
+Note: this mapping is provisional. It follows PRIDE's file type definitions (SEARCH = search engine/pipeline output, required for Partial submissions; QUANT = quantification output) but PRIDE does not list DIA-NN explicitly. The `.quant` files are used as the SEARCH files; the main DIA-NN report is submitted as QUANT. Revise it if PRIDE support or a reviewer indicates different types, and keep the `Files` sheet and `tools/Export-FileLists.ps1` in sync.
+
 ## Repository contents
 
 - `PRIDE_submission_template.xlsx` — blank template, copy this per project.
 - `tools/` — drop-in folder for the machine where the data lives. Copy the whole folder into the project's data directory and run the launchers by double-clicking; both scripts operate on the **parent** directory of the `tools` folder:
-    - `Export-FileLists.bat` / `Export-FileLists.ps1` — **step 1:** scans recursively for proteomics files of interest (`.raw`, `.mzML`, MaxQuant output tables, `mqpar.xml`, `.fasta`, …) and writes one `.txt` per category into `tools/_filelists/`, grouped by folder (folder path, blank line, file names; two blank lines between folders). Copy names into the template's `Files` sheet and manually curate which files are actually submitted.
+    - `Export-FileLists.bat` / `Export-FileLists.ps1` — **step 1:** scans recursively for proteomics files of interest (`.raw`, `.mzML`, `.quant` search files, DIA-NN output (`DIANN_QUANT_files.txt`, `DIANN_other_files.txt`) and spectral libraries, `sdrf.tsv`/`sdrf.txt` or `*.sdrf.tsv`/`*.sdrf.txt` if already exported, MaxQuant output tables, `mqpar.xml`, `.fasta`, …) and writes one `.txt` per category into `tools/_filelists/`, grouped by folder (folder path, blank line, file names; two blank lines between folders). Copy names into the template's `Files` sheet and manually curate which files are actually submitted.
     - `run_checksums.bat` / `make_checksums.py` — **step 2, after curating the `Files` sheet:** paste the curated file names into `tools/checksum_input.txt` (one per line; folder-path lines copied from the file lists tell it where the names below are) and run.
         - Finds each file, computes SHA-1 checksums in parallel (Python 3.6+ standard library only), and writes `tools/checksum.txt` (`file name<TAB>sha1`, the format PRIDE wants).
         - Never guesses: if a name is missing, matches more than one file, or is listed twice, it lists the problem lines and writes nothing.
